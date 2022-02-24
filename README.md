@@ -1,0 +1,1 @@
+# quill-clipboard-plugin
