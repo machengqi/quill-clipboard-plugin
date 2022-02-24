@@ -1,0 +1,40 @@
+{
+		"name": "quill-better-clipboard",
+		"version": "1.0.0",
+		"description": "A new clipboard module better then quill clipboard",
+		"main": "quill.clipboard.js",
+		"scripts": {
+				"watch": "webpack --watch --progress --mode development",
+				"start": "webpack-dev-server --hot --port 8001",
+				"debug": "webpack --mode=development"
+		},
+		"author": "",
+		"license": "ISC",
+		"dependencies": {
+				"cheerio": "^1.0.0-rc.10",
+				"sanitize-html": "^2.7.0"
+		},
+		"devDependencies": {
+				"@babel/core": "^7.8.7",
+				"@babel/plugin-proposal-class-properties": "^7.8.3",
+				"@babel/plugin-transform-runtime": "^7.8.3",
+				"@babel/preset-env": "^7.8.7",
+				"@types/node": "^17.0.18",
+				"@types/quill": "^2.0.9",
+				"@types/sanitize-html": "^2.6.2",
+				"babel-loader": "^8.0.6",
+				"babel-plugin-transform-object-assign": "^6.22.0",
+				"css-loader": "^6.6.0",
+				"extract-text-webpack-plugin": "^4.0.0-beta.0",
+				"prettier": "^2.5.1",
+				"style-loader": "^0.19.1",
+				"ts-loader": "^8.0.6",
+				"typescript": "~4.2.3",
+				"uglifyjs-webpack-plugin": "^1.1.6",
+				"webpack": "^4.42.0",
+				"webpack-cli": "^3.2.1",
+				"webpack-dev-server": "^3.1.14",
+				"quill": ">=2.0.0-dev.3",
+				"quill-delta": "^4.2.2"
+		}
+}
