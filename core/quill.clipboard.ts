@@ -44,18 +44,8 @@ class BetterClipboard {
             case !this.calType(src as string): 
               $(el).replaceWith(this.options.errorDoc.type);
             default:
-              // $(el).replaceWith(this.options.errorDoc.other)
               break;
           }
-          
-          // if (
-          //   src &&
-          //   (!isDataurl(src) ||
-          //     this.calSize(src) > this.options.size ||
-          //     !this.calType(src))
-          // ) {
-          //   $(el).replaceWith(this.options.doc);
-          // }
         });
       }
     }
@@ -149,16 +139,14 @@ class BetterClipboard {
   }
 }
 
-Quill.register("modules/BetterClipboard", BetterClipboard);
-// (window as any).QuillImageDropAndPaste = BetterClipboard;
-// console.log(window);
-// if ("Quill" in window) 55{
-//   (window as any).Quill.register(
-//     "modules/BetterClipboard",
-//     BetterClipboard,
-//     true
-//   );
-// }
+(window as any).QuillImageDropAndPaste = BetterClipboard;
+if ("Quill" in window) {
+  (window as any).Quill.register(
+    "modules/BetterClipboard",
+    BetterClipboard,
+    true
+  );
+}
 function cleanHtml(this: BetterClipboard, html: string): string {
   console.log(this.options);
   if (!html) return "";
