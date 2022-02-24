@@ -1,7 +1,11 @@
 interface IClipboardModule {
   mimetypes: string[];
   size: number;
-  doc: string;
+  errorDoc: {
+    size: string,
+    type: string,
+    other: string,
+  };
   allowedTags: string[];
   disallowedTags: string[];
   // errorCallBack: {

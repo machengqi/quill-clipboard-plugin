@@ -19,7 +19,9 @@ const quill = new Quill("#editor", {
     toolbar: {
       container: fullToolbarOptions,
     },
-    betterClipboard: {},
+    betterClipboard: {
+      size: 1
+    },
   },
 });
 

@@ -4,9 +4,10 @@ import {
   clipboardDefaultOpts,
   defaultAllowedTags,
   defaultDisallowedTags,
-} from "@/constants/options";
+} from "@/constants";
 import sanitizeHTML from "sanitize-html";
 import Delta from "quill-delta";
+import { isDataurl } from "@/utils/regexps";
 
 // import Cli from 'quill/modules/clipboard';
 
@@ -16,38 +17,49 @@ class BetterClipboard {
   constructor(quill: Quill, options: IClipboardModule) {
     this.quill = quill;
     this.options = Object.assign({}, clipboardDefaultOpts, options);
-    this.quill.root.addEventListener("paste", this.onPaste.bind(this), false);
+    this.quill.root.addEventListener("paste", this.onPaste.bind(this), true);
   }
 
   onPaste(e: ClipboardEvent) {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range == null) return;
-    let html = cleanHtml(e.clipboardData?.getData("text/html") || "");
+    let html = cleanHtml.bind(this)(e.clipboardData?.getData("text/html") || "");
+    console.log(html);
     const text = e.clipboardData?.getData("text/plain");
-    console.log(html, "😈2");
     e.clipboardData?.getData("");
     const files = Array.from(e.clipboardData?.files || []);
     const $ = cheerio.load(html || "");
     if (html) {
       if ($("img").length) {
-        const RegexpsBase64 =
-          /^\s*data:([a-z]+\/[a-z0-9-+.]+(;[a-z-]+=[a-z0-9-]+)?)?(;base64)?,([a-z0-9!$&',()*+;=\-._~:@\/?%\s]*?)\s*$/i;
-        // const images = [];
         $("img").each((_i, el) => {
           let src = $(el).attr("src");
-          if (
-            src &&
-            (!RegexpsBase64.test(src) ||
-              this.calSize(src) > this.options.size ||
-              !this.calType(src))
-          ) {
-            $(el).replaceWith(this.options.doc);
+          switch (true) {
+            case !src:
+              $(el).remove();
+              break;
+            case this.calSize(src as string) > this.options.size:
+              $(el).replaceWith(this.options.errorDoc.size)
+              break;
+            case !this.calType(src as string): 
+              $(el).replaceWith(this.options.errorDoc.type);
+            default:
+              // $(el).replaceWith(this.options.errorDoc.other)
+              break;
           }
+          
+          // if (
+          //   src &&
+          //   (!isDataurl(src) ||
+          //     this.calSize(src) > this.options.size ||
+          //     !this.calType(src))
+          // ) {
+          //   $(el).replaceWith(this.options.doc);
+          // }
         });
       }
     }
-    console.log(files, "😈");
+    html = $.html();
     if (!html && files.length > 0) {
       this.fileFormat(range, files);
       return;
@@ -75,36 +87,31 @@ class BetterClipboard {
       .retain(range.index)
       .delete(range.length)
       .concat(pastedDelta);
-    console.log(range, "😄");
-    console.log(formats, "😄");
-    console.log(pastedDelta, "😄");
+
+    new Delta().insert("Text", { StyleSheet: {} });
 
     this.quill.updateContents(delta, Quill.sources.USER);
-    // this.quill.setSelection(
-    //   delta.length() - range.length,
-    //   0,
-    //   Quill.sources.SILENT
-    // );
+    this.quill.setSelection(
+      delta.length() - range.length,
+      0,
+      Quill.sources.SILENT
+    );
   }
 
-  calSize(base64Url: string) {
-    let strIndex = base64Url.indexOf(",") + 1;
-    if (!strIndex) return 0;
-    let str = base64Url.slice(strIndex);
-    const equalIndex = str.indexOf("=");
-    if (str.indexOf("=") > 0) {
-      str = str.substring(0, equalIndex);
-    }
-    const strLength = str.length;
-    const fileLength = strLength - (strLength / 8) * 2;
-    // return size
-    return fileLength.toFixed(2);
+  calSize(dataurl: string) {
+    if (!dataurl) return 0;
+    if (!isDataurl(dataurl)) return 0;
+    const file = dataURLtoFile(dataurl, "file");
+    console.log(file.size);
+    return file.size;
   }
 
-  calType(base64Url: string) {
-    let strIndex = base64Url.indexOf(",") + 1;
+  calType(dataurl: string) {
+    if (!dataurl) return false;
+    if (!isDataurl(dataurl)) return false;
+    let strIndex = dataurl.indexOf(",") + 1;
     if (!strIndex) return false;
-    let str = base64Url.slice(0, strIndex);
+    let str = dataurl.slice(0, strIndex);
     return this.options.mimetypes?.some((e: string) => str.includes(e));
   }
 
@@ -152,16 +159,19 @@ Quill.register("modules/BetterClipboard", BetterClipboard);
 //     true
 //   );
 // }
-function cleanHtml(html: string): string {
+function cleanHtml(this: BetterClipboard, html: string): string {
+  console.log(this.options);
   if (!html) return "";
   return sanitizeHTML(html, {
-    allowedTags: sanitizeHTML.defaults.allowedTags.concat(["img", "br", "hr"]),
+    allowedTags: sanitizeHTML.defaults.allowedTags.concat(
+      defaultAllowedTags,
+      this.options.allowedTags
+    ),
     allowedAttributes: {
-      // 放行 role="button"
-      "*": ["role"],
       a: ["href", "name", "target", "id", "class", "style"],
       img: ["src", "id", "class", "style"],
     },
+    allowedSchemes: ["data", "http", "https"],
   });
 }
 
@@ -180,6 +190,18 @@ function getImgInfo(files: File[]) {
     });
   });
   return Promise.all(promises);
+}
+
+function dataURLtoFile(dataurl: string, filename: string) {
+  const arr = dataurl.split(",");
+  const mime = arr[0].match(/:(.*?);/)?.[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
 }
 
 // function typeError() {
