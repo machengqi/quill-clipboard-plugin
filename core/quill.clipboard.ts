@@ -125,12 +125,12 @@ class ClipboardPlugin {
   }
 }
 
-if (window) {
-  (window as any).QuillImageDropAndPaste = ClipboardPlugin;
-  if ('Quill' in window) {
-    (window as any).Quill.register('modules/ClipboardPlugin', ClipboardPlugin, true);
-  }
-}
+// if (window) {
+//   (window as any).QuillImageDropAndPaste = ClipboardPlugin;
+//   if ('Quill' in window) {
+//     (window as any).Quill.register('modules/ClipboardPlugin', ClipboardPlugin, true);
+//   }
+// }
 function cleanHtml<T>(this: T extends ClipboardPlugin ? T : {}, html: string): string {
   if (!html) return '';
   return sanitizeHTML(html, {
