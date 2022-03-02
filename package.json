@@ -2,11 +2,12 @@
 		"name": "quill-better-clipboard",
 		"version": "1.0.0",
 		"description": "A new clipboard module better then quill clipboard",
-		"main": "core/quill.clipboard.ts",
+		"main": "dist/quill.clipboard.min.js",
 		"scripts": {
 				"watch": "webpack --watch --progress --mode development",
 				"start": "webpack-dev-server --hot --port 8001",
-				"debug": "webpack --mode=development"
+				"debug": "webpack --mode=development",
+    		"build": "webpack --mode production"
 		},
 		"author": "MCQ <1055259@qq.com>",
 		"license": "ISC",
