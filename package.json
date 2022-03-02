@@ -3,6 +3,7 @@
 		"version": "1.0.0",
 		"description": "A new clipboard module better then quill clipboard",
 		"main": "dist/quill.clipboard.min.js",
+		"types": "types/index.d.ts",
 		"scripts": {
 				"watch": "webpack --watch --progress --mode development",
 				"start": "webpack-dev-server --hot --port 8001",

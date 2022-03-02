@@ -1,5 +1,5 @@
 declare module 'quill-clipboard-plugin' {
-  export class ClipboardPlugin {}
+  export default class ClipboardPlugin {}
 
   export enum EFailType {
     size,
