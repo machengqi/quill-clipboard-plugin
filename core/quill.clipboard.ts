@@ -1,15 +1,11 @@
-import Quill, { RangeStatic } from "quill";
-import cheerio from "cheerio";
-import {
-  clipboardDefaultOpts,
-  defaultAllowedTags,
-} from "@/constants";
-import sanitizeHTML from "sanitize-html";
-import Delta from "quill-delta";
-import { isDataurl } from "@/utils/regexps";
+import Quill, { RangeStatic } from 'quill';
+import cheerio from 'cheerio';
+import { clipboardDefaultOpts, defaultAllowedTags } from '@/constants';
+import sanitizeHTML from 'sanitize-html';
+import Delta from 'quill-delta';
+import { isDataurl } from '@/utils/regexps';
 // import { IClipboardModule, EFailType } from 'clipboard-plugin'
 // import { EFailType, IClipboardModule } from "@/types/clipboard";
-
 
 export enum EFailType {
   size,
@@ -29,32 +25,32 @@ class ClipboardPlugin {
   constructor(quill: Quill, options: IClipboardModule) {
     this.quill = quill;
     this.options = Object.assign({}, clipboardDefaultOpts, options);
-    this.quill.root.addEventListener("paste", this.onPaste.bind(this), true);
+    this.quill.root.addEventListener('paste', this.onPaste.bind(this), true);
   }
 
   onPaste(e: ClipboardEvent) {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range == null) return;
-    let html = cleanHtml.bind(this)(e.clipboardData?.getData("text/html") || "");
-    const text = e.clipboardData?.getData("text/plain");
-    e.clipboardData?.getData("");
+    let html = cleanHtml.bind(this)(e.clipboardData?.getData('text/html') || '');
+    const text = e.clipboardData?.getData('text/plain');
+    e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);
-    const $ = cheerio.load(html || "");
+    const $ = cheerio.load(html || '');
     if (html) {
-      if ($("img").length) {
-        $("img").each((_i, el) => {
-          let src = $(el).attr("src");
+      if ($('img').length) {
+        $('img').each((_i, el) => {
+          let src = $(el).attr('src');
           switch (true) {
             case !src:
               $(el).remove();
               break;
             case this.calSize(src as string) > this.options.size:
-              $(el).replaceWith(this.options.errorCallBack(EFailType.size))
+              $(el).replaceWith(this.options.errorCallBack(EFailType.size));
               break;
-            case !this.calType(src as string): 
+            case !this.calType(src as string):
               $(el).replaceWith(this.options.errorCallBack(EFailType.type));
-              default:
+            default:
               break;
           }
         });
@@ -66,11 +62,8 @@ class ClipboardPlugin {
       return;
     }
     if (html && files.length > 0) {
-      const doc = new DOMParser().parseFromString(html, "text/html");
-      if (
-        doc.body.childElementCount === 1 &&
-        doc.body.firstElementChild?.tagName === "IMG"
-      ) {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      if (doc.body.childElementCount === 1 && doc.body.firstElementChild?.tagName === 'IMG') {
         this.fileFormat(range, files);
         return;
       }
@@ -78,31 +71,21 @@ class ClipboardPlugin {
     this.pasteContent({ text, html }, range);
   }
 
-  pasteContent(
-    { text, html }: { text: string | undefined; html: string },
-    range: RangeStatic
-  ) {
+  pasteContent({ text, html }: { text: string | undefined; html: string }, range: RangeStatic) {
     const formats = this.quill.getFormat(range.index);
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
-    const delta = new Delta()
-      .retain(range.index)
-      .delete(range.length)
-      .concat(pastedDelta);
+    const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
 
-    new Delta().insert("Text", { StyleSheet: {} });
+    new Delta().insert('Text', { StyleSheet: {} });
 
     this.quill.updateContents(delta, Quill.sources.USER);
-    this.quill.setSelection(
-      delta.length() - range.length,
-      0,
-      Quill.sources.SILENT
-    );
+    this.quill.setSelection(delta.length() - range.length, 0, Quill.sources.SILENT);
   }
 
   calSize(dataurl: string) {
     if (!dataurl) return 0;
     if (!isDataurl(dataurl)) return 0;
-    const file = dataURLtoFile(dataurl, "file");
+    const file = dataURLtoFile(dataurl, 'file');
     console.log(file.size);
     return file.size;
   }
@@ -110,7 +93,7 @@ class ClipboardPlugin {
   calType(dataurl: string) {
     if (!dataurl) return false;
     if (!isDataurl(dataurl)) return false;
-    let strIndex = dataurl.indexOf(",") + 1;
+    let strIndex = dataurl.indexOf(',') + 1;
     if (!strIndex) return false;
     let str = dataurl.slice(0, strIndex);
     return this.options.mimetypes?.some((e: string) => str.includes(e));
@@ -119,11 +102,7 @@ class ClipboardPlugin {
   async fileFormat(range: RangeStatic, files: File[]) {
     const uploads: File[] = [];
     Array.from(files).forEach((file) => {
-      if (
-        file &&
-        this.options.mimetypes.includes(file.type) &&
-        file.size <= this.options.size
-      ) {
+      if (file && this.options.mimetypes.includes(file.type) && file.size <= this.options.size) {
         uploads.push(file);
       }
     });
@@ -138,37 +117,29 @@ class ClipboardPlugin {
 
       const deltas = base64List.reduce(
         (delta: Delta, image) => delta.insert({ image }),
-        new Delta().retain(range.index).delete(range.length)
+        new Delta().retain(range.index).delete(range.length),
       );
       this.quill.updateContents(deltas, Quill.sources.USER);
-      this.quill.setSelection(
-        range.index + base64List.length,
-        0,
-        Quill.sources.SILENT
-      );
+      this.quill.setSelection(range.index + base64List.length, 0, Quill.sources.SILENT);
     }
   }
 }
 
-(window as any).QuillImageDropAndPaste = ClipboardPlugin;
-if ("Quill" in window) {
-  (window as any).Quill.register(
-    "modules/ClipboardPlugin",
-    ClipboardPlugin,
-    true
-  );
-} 
+if (window) {
+  (window as any).QuillImageDropAndPaste = ClipboardPlugin;
+  if ('Quill' in window) {
+    (window as any).Quill.register('modules/ClipboardPlugin', ClipboardPlugin, true);
+  }
+}
 function cleanHtml<T>(this: T extends ClipboardPlugin ? T : {}, html: string): string {
-  if (!html) return "";
+  if (!html) return '';
   return sanitizeHTML(html, {
-    allowedTags: sanitizeHTML.defaults.allowedTags.concat(
-      defaultAllowedTags,
-    ),
+    allowedTags: sanitizeHTML.defaults.allowedTags.concat(defaultAllowedTags),
     allowedAttributes: {
-      a: ["href", "name", "target", "id", "class", "style"],
-      img: ["src", "id", "class", "style"],
+      a: ['href', 'name', 'target', 'id', 'class', 'style'],
+      img: ['src', 'id', 'class', 'style'],
     },
-    allowedSchemes: ["data", "http", "https"],
+    allowedSchemes: ['data', 'http', 'https'],
   });
 }
 
@@ -190,7 +161,7 @@ function getImgInfo(files: File[]) {
 }
 
 function dataURLtoFile(dataurl: string, filename: string) {
-  const arr = dataurl.split(",");
+  const arr = dataurl.split(',');
   const mime = arr[0].match(/:(.*?);/)?.[1];
   const bstr = atob(arr[1]);
   let n = bstr.length;
