@@ -15,12 +15,12 @@
 				"sanitize-html": "^2.7.0"
 		},
 		"keywords": [
-			"quill",
-			"editor",
-			"image",
-			"plugins",
-			"clipboard",
-			"paste"
+				"quill",
+				"editor",
+				"image",
+				"plugins",
+				"clipboard",
+				"paste"
 		],
 		"devDependencies": {
 				"@babel/core": "^7.8.7",
@@ -30,19 +30,24 @@
 				"@types/node": "^17.0.18",
 				"@types/quill": "^2.0.9",
 				"@types/sanitize-html": "^2.6.2",
+				"@typescript-eslint/eslint-plugin": "^4.29.1",
+				"@typescript-eslint/parser": "^4.29.1",
 				"babel-loader": "^8.0.6",
 				"babel-plugin-transform-object-assign": "^6.22.0",
 				"css-loader": "^6.6.0",
+				"eslint": "^8.9.0",
+				"eslint-config-prettier": "^8.4.0",
+				"eslint-plugin-prettier": "^4.0.0",
 				"extract-text-webpack-plugin": "^4.0.0-beta.0",
 				"prettier": "^2.5.1",
+				"quill": ">=2.0.0-dev.3",
+				"quill-delta": "^4.2.2",
 				"style-loader": "^0.19.1",
 				"ts-loader": "^8.0.6",
 				"typescript": "~4.2.3",
 				"uglifyjs-webpack-plugin": "^1.1.6",
 				"webpack": "^4.42.0",
 				"webpack-cli": "^3.2.1",
-				"webpack-dev-server": "^3.1.14",
-				"quill": ">=2.0.0-dev.3",
-				"quill-delta": "^4.2.2"
+				"webpack-dev-server": "^3.1.14"
 		}
 }

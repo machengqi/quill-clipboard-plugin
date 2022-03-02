@@ -43,6 +43,7 @@ module.exports = [
           use: {
             loader: 'ts-loader',
             options: {
+              allowTsInNodeModules: true,
               compilerOptions: {
                 declaration: false,
                 module: 'es6',

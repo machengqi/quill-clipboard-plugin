@@ -1,15 +1,15 @@
-interface IClipboardModule {
+// import { IOptions } from 'sanitize-html';
+
+// declare module 'clipboard-plugin' {
+export enum EFailType {
+  size,
+  type,
+  other,
+}
+export interface IClipboardModule {
   mimetypes: string[];
   size: number;
-  errorDoc: {
-    size: string,
-    type: string,
-    other: string,
-  };
-  allowedTags: string[];
-  disallowedTags: string[];
-  // errorCallBack: {
-  //   sizeError(): void,
-  //   typeError(): void,
-  // }
+  sanitize: any;
+  errorCallBack(arg: EFailType): string;
 }
+// }

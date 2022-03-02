@@ -1,17 +1,29 @@
-import Quill, { RangeStatic, StringMap, ClipboardStatic } from "quill";
+import Quill, { RangeStatic } from "quill";
 import cheerio from "cheerio";
 import {
   clipboardDefaultOpts,
   defaultAllowedTags,
-  defaultDisallowedTags,
 } from "@/constants";
 import sanitizeHTML from "sanitize-html";
 import Delta from "quill-delta";
 import { isDataurl } from "@/utils/regexps";
+// import { IClipboardModule, EFailType } from 'clipboard-plugin'
+// import { EFailType, IClipboardModule } from "@/types/clipboard";
 
-// import Cli from 'quill/modules/clipboard';
 
-class BetterClipboard {
+export enum EFailType {
+  size,
+  type,
+  other,
+}
+export interface IClipboardModule {
+  mimetypes: string[];
+  size: number;
+  sanitize: any;
+  errorCallBack(arg: EFailType): string;
+}
+
+class ClipboardPlugin {
   public quill!: Quill;
   public options!: IClipboardModule;
   constructor(quill: Quill, options: IClipboardModule) {
@@ -25,7 +37,6 @@ class BetterClipboard {
     const range = this.quill.getSelection(true);
     if (range == null) return;
     let html = cleanHtml.bind(this)(e.clipboardData?.getData("text/html") || "");
-    console.log(html);
     const text = e.clipboardData?.getData("text/plain");
     e.clipboardData?.getData("");
     const files = Array.from(e.clipboardData?.files || []);
@@ -39,11 +50,11 @@ class BetterClipboard {
               $(el).remove();
               break;
             case this.calSize(src as string) > this.options.size:
-              $(el).replaceWith(this.options.errorDoc.size)
+              $(el).replaceWith(this.options.errorCallBack(EFailType.size))
               break;
             case !this.calType(src as string): 
-              $(el).replaceWith(this.options.errorDoc.type);
-            default:
+              $(el).replaceWith(this.options.errorCallBack(EFailType.type));
+              default:
               break;
           }
         });
@@ -139,21 +150,19 @@ class BetterClipboard {
   }
 }
 
-(window as any).QuillImageDropAndPaste = BetterClipboard;
+(window as any).QuillImageDropAndPaste = ClipboardPlugin;
 if ("Quill" in window) {
   (window as any).Quill.register(
-    "modules/BetterClipboard",
-    BetterClipboard,
+    "modules/ClipboardPlugin",
+    ClipboardPlugin,
     true
   );
-}
-function cleanHtml(this: BetterClipboard, html: string): string {
-  console.log(this.options);
+} 
+function cleanHtml<T>(this: T extends ClipboardPlugin ? T : {}, html: string): string {
   if (!html) return "";
   return sanitizeHTML(html, {
     allowedTags: sanitizeHTML.defaults.allowedTags.concat(
       defaultAllowedTags,
-      this.options.allowedTags
     ),
     allowedAttributes: {
       a: ["href", "name", "target", "id", "class", "style"],
@@ -192,22 +201,4 @@ function dataURLtoFile(dataurl: string, filename: string) {
   return new File([u8arr], filename, { type: mime });
 }
 
-// function typeError() {
-
-//   return
-// }
-
-// function sanitizeHtml(html?: string): string {
-//   if (!html) return '';
-//   const $ = cheerio.load(html || '');
-//   defaultAllowedTags.forEach(e => {
-//     $(e).remove()
-//     // $(e).each(el => {
-//     //   $(el).remove();
-//     // })
-//   })
-//   const sanHtml = $.html();
-//   return sanHtml;
-// }
-
-export default BetterClipboard;
+export default ClipboardPlugin;
