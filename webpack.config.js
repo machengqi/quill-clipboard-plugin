@@ -24,6 +24,7 @@ module.exports = [
       libraryTarget: "umd",
       publicPath: "/dist/",
     },
+    target: 'node',
     devServer: {
       contentBase: "./examples",
     },

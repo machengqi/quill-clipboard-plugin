@@ -57,6 +57,7 @@ class ClipboardPlugin {
       }
     }
     html = $.html();
+    console.log(html);
     if (!html && files.length > 0) {
       this.fileFormat(range, files);
       return;
@@ -74,6 +75,7 @@ class ClipboardPlugin {
   pasteContent({ text, html }: { text: string | undefined; html: string }, range: RangeStatic) {
     const formats = this.quill.getFormat(range.index);
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
+    console.log(pastedDelta, '😈');
     const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
 
     new Delta().insert('Text', { StyleSheet: {} });
