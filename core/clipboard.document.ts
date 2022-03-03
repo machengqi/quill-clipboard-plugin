@@ -1,23 +1,14 @@
-interface IVDoc {
-  targetName?: string;
-  attr?: {
-    [x in string]: any;
-  };
-  style?: string | Record<string, string>[] | Record<string, string>;
-  children?: IVDoc[];
-  text?: string | number;
-  isStatic?: boolean;
-}
+import { IVDoc } from "quill-clipboard-plugin";
 
-class VDoc {
-  targetName!: string | void;
+export class VDoc {
+  targetName!: string;
   attrs!: { [key: string]: any };
   style!: string | object[] | object | void;
   children!: VDoc[] | void;
   text!: string | number;
   isStatic: boolean = false;
   constructor(doc: IVDoc) {
-    this.targetName = doc.targetName;
+    this.targetName = doc.targetName || 'div';
     this.attrs = doc.attr || {};
     this.style = doc.style;
     this.children = doc.children?.map((e) => new VDoc(e));
@@ -36,7 +27,7 @@ export function createEmptyNode(val: string = '') {
 
 export function createDocument(doc: VDoc): HTMLElement {
   if (!doc) return document.createElement('div');
-  const el = document.createElement(doc.text.toString());
+  const el = document.createElement(doc.targetName.toString());
   if (doc.text) el.textContent = doc.text.toString();
   if (doc.attrs) {
     const objKey = Object.keys(doc.attrs);
@@ -54,6 +45,9 @@ export function createDocument(doc: VDoc): HTMLElement {
         el.setAttribute(e, doc.attrs[e].toString());
       }
     });
+  }
+  if (doc.style) {
+    setStyleSheet({doc: el, style: doc.style});
   }
   if (doc.children && doc.children.length) {
     const childNode = doc.children.map((e) => createDocument(e));

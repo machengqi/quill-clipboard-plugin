@@ -17,7 +17,15 @@ const quill = new Quill('#editor', {
     betterClipboard: {
       size: 1,
       errorCallBack() {
-        return '<div class="clipboard-type" style="display: block; background: #f6f6f6; padding: 1.5em 0;"><p style="color: #ccc">图片尺寸过大</p></div>';
+        return {
+          targetName: 'div',
+          text: '图片尺寸过大',
+          style: {
+            height: '100px',
+            color: 'red',
+            background: '#000',
+          }
+        };
       },
     },
   },

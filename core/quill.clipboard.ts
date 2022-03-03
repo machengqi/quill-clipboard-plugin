@@ -4,6 +4,8 @@ import { clipboardDefaultOpts, defaultAllowedTags } from '@/constants';
 import sanitizeHTML from 'sanitize-html';
 import Delta from 'quill-delta';
 import { isDataurl } from '@/utils/regexps';
+import { IVDoc } from 'quill-clipboard-plugin';
+import { createDocument, VDoc } from './clipboard.document';
 // import { IClipboardModule, EFailType } from 'clipboard-plugin'
 // import { EFailType, IClipboardModule } from "@/types/clipboard";
 
@@ -16,7 +18,7 @@ export interface IClipboardModule {
   mimetypes: string[];
   size: number;
   sanitize: any;
-  errorCallBack(arg: EFailType): string;
+  errorCallBack(arg: EFailType): IVDoc;
 }
 
 class ClipboardPlugin {
@@ -31,7 +33,7 @@ class ClipboardPlugin {
   onPaste(e: ClipboardEvent) {
     e.preventDefault();
     const range = this.quill.getSelection(true);
-    if (range == null) return;
+    if (range === null) return;
     let html = cleanHtml.bind(this)(e.clipboardData?.getData('text/html') || '');
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
@@ -46,10 +48,13 @@ class ClipboardPlugin {
               $(el).remove();
               break;
             case this.calSize(src as string) > this.options.size:
-              $(el).replaceWith(this.options.errorCallBack(EFailType.size));
+              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)))
+              console.log(SizeVNode, '😈');
+              $(el).replaceWith(SizeVNode.outerHTML);
               break;
             case !this.calType(src as string):
-              $(el).replaceWith(this.options.errorCallBack(EFailType.type));
+              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)))
+              $(el).replaceWith(TypeVNode.outerHTML);
             default:
               break;
           }
@@ -57,7 +62,6 @@ class ClipboardPlugin {
       }
     }
     html = $.html();
-    console.log(html);
     if (!html && files.length > 0) {
       this.fileFormat(range, files);
       return;
@@ -75,7 +79,6 @@ class ClipboardPlugin {
   pasteContent({ text, html }: { text: string | undefined; html: string }, range: RangeStatic) {
     const formats = this.quill.getFormat(range.index);
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
-    console.log(pastedDelta, '😈');
     const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
 
     new Delta().insert('Text', { StyleSheet: {} });
@@ -88,7 +91,6 @@ class ClipboardPlugin {
     if (!dataurl) return 0;
     if (!isDataurl(dataurl)) return 0;
     const file = dataURLtoFile(dataurl, 'file');
-    console.log(file.size);
     return file.size;
   }
 
@@ -112,7 +114,6 @@ class ClipboardPlugin {
       const base64List = await getImgInfo(uploads);
       let img = new Image() as HTMLImageElement | null;
       (img as HTMLImageElement).onerror = () => {
-        console.log(222);
       };
 
       (img as HTMLImageElement).src = base64List[0] as string;
@@ -133,7 +134,8 @@ class ClipboardPlugin {
 //     (window as any).Quill.register('modules/ClipboardPlugin', ClipboardPlugin, true);
 //   }
 // }
-function cleanHtml<T>(this: T extends ClipboardPlugin ? T : {}, html: string): string {
+
+function cleanHtml<T>(this: T extends ClipboardPlugin ? T : Record<string, any>, html: string): string {
   if (!html) return '';
   return sanitizeHTML(html, {
     allowedTags: sanitizeHTML.defaults.allowedTags.concat(defaultAllowedTags),

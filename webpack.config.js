@@ -17,6 +17,7 @@ module.exports = [
     entry: {
       "quill.clipboard": "./core/quill.clipboard.ts",
       demo: "./examples/index.ts",
+      "clipboard.document": "./core/clipboard.document.ts",
     },
     output: {
       filename: "[name].min.js",
@@ -24,7 +25,7 @@ module.exports = [
       libraryTarget: "umd",
       publicPath: "/dist/",
     },
-    target: 'node',
+    target: 'web',
     devServer: {
       contentBase: "./examples",
     },

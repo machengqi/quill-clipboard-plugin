@@ -10,6 +10,6 @@ export interface IClipboardModule {
   mimetypes: string[];
   size: number;
   sanitize: any;
-  errorCallBack(arg: EFailType): string;
+  errorCallBack(arg: EFailType): IVDoc;
 }
 // }

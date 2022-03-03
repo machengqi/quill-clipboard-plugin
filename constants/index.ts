@@ -87,6 +87,6 @@ export const clipboardDefaultOpts: IClipboardModule = {
   sanitize: {},
   errorCallBack(e) {
     console.log(e);
-    return "";
+    return {};
   },
 };
