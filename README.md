@@ -79,7 +79,7 @@ interface ClipboardPluginOption {
     // file max size, default 10MB
     size: number;
 
-
+    // TODO fix
     sanitize: any;
 
     // error file call back, need return a VDoc
