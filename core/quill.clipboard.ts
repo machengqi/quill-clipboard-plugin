@@ -49,7 +49,6 @@ class ClipboardPlugin {
               break;
             case this.calSize(src as string) > this.options.size:
               const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)))
-              console.log(SizeVNode, '😈');
               $(el).replaceWith(SizeVNode.outerHTML);
               break;
             case !this.calType(src as string):
