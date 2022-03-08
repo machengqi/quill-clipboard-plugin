@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import { clipboardDefaultOpts, defaultAllowedTags } from '@/constants';
 import sanitizeHTML from 'sanitize-html';
 import Delta from 'quill-delta';
-import { isDataurl } from '@/utils/regexps';
+import { isDataurl, isUrl } from '@/utils/regexps';
 import { IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
 // import { IClipboardModule, EFailType } from 'clipboard-plugin'
@@ -43,6 +43,8 @@ class ClipboardPlugin {
       if ($('img').length) {
         $('img').each((_i, el) => {
           let src = $(el).attr('src');
+          if (isUrl(src || '')) return
+          console.log(src, 'hahah')
           switch (true) {
             case !src:
               $(el).remove();
