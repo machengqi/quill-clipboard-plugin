@@ -15,7 +15,7 @@ const quill = new Quill('#editor', {
       container: fullToolbarOptions,
     },
     betterClipboard: {
-      size: 1,
+      size: 1024 * 1024 * 2,
       errorCallBack() {
         return {
           targetName: 'div',

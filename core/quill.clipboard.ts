@@ -61,7 +61,7 @@ class ClipboardPlugin {
       }
     }
     html = $.html();
-    if (!html && files.length > 0) {
+    if (!$('body').html() && files.length > 0) {
       this.fileFormat(range, files);
       return;
     }
@@ -105,8 +105,20 @@ class ClipboardPlugin {
   async fileFormat(range: RangeStatic, files: File[]) {
     const uploads: File[] = [];
     Array.from(files).forEach((file) => {
-      if (file && this.options.mimetypes.includes(file.type) && file.size <= this.options.size) {
-        uploads.push(file);
+      if (file) {
+        let VNode;
+        switch (true) {
+          case file.size > this.options.size:
+              VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)))
+            break;
+          case !this.options.mimetypes.includes(file.type):
+              VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)))
+            break;
+          default:
+            uploads.push(file);
+            break;
+        }
+        VNode && this.pasteContent({ text: VNode.textContent || '', html: VNode.outerHTML }, range);
       }
     });
     if (uploads.length > 0) {
