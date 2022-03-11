@@ -67,13 +67,13 @@ class ClipboardPlugin {
       this.fileFormat(range, files);
       return;
     }
-    if (html && files.length > 0) {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      if (doc.body.childElementCount === 1 && doc.body.firstElementChild?.tagName === 'IMG') {
-        this.fileFormat(range, files);
-        return;
-      }
-    }
+    // if (html && files.length > 0) {
+    //   const doc = new DOMParser().parseFromString(html, 'text/html');
+    //   if (doc.body.childElementCount === 1 && doc.body.firstElementChild?.tagName === 'IMG') {
+    //     this.fileFormat(range, files);
+    //     return;
+    //   }
+    // }
     this.pasteContent({ text, html }, range);
   }
 
