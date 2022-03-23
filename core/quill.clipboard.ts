@@ -15,7 +15,7 @@ export interface IClipboardModule {
   mimetypes: string[];
   size: number;
   errorCallBack(arg: EFailType): IVDoc;
-  formatHtml(arg: string): string | void;
+  beforePaste(arg: string): string | void;
 }
 
 class ClipboardPlugin {
@@ -32,7 +32,7 @@ class ClipboardPlugin {
     const range = this.quill.getSelection(true);
     if (range === null) return;
     let html =
-      this.options.formatHtml(e.clipboardData?.getData('text/html') || '') ??
+      this.options.beforePaste(e.clipboardData?.getData('text/html') || '') ??
       (e.clipboardData?.getData('text/html') || '');
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');

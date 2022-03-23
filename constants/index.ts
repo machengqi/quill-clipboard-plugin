@@ -88,5 +88,5 @@ export const clipboardDefaultOpts: IClipboardModule = {
     console.log(e);
     return {};
   },
-  formatHtml() {},
+  beforePaste() {},
 };

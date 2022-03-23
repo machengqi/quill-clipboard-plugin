@@ -82,8 +82,8 @@ interface ClipboardPluginOption {
     // error file call back, need return a VDoc
     errorCallBack(arg: EFailType): IVDoc,
 
-    // this callback can format clipboard's html
-    formatHtml(arg: string): string | void,
+    // this callback before then paste , the arg is clipboard html, return val can format clipboard data
+    beforePaste(arg: string): string | void,
 }
 
 /**
