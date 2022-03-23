@@ -1,13 +1,10 @@
 import Quill, { RangeStatic } from 'quill';
 import cheerio from 'cheerio';
-import { clipboardDefaultOpts, defaultAllowedTags } from '@/constants';
-import sanitizeHTML from 'sanitize-html';
+import { clipboardDefaultOpts } from '@/constants';
 import Delta from 'quill-delta';
 import { isDataurl, isUrl } from '@/utils/regexps';
 import { IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
-// import { IClipboardModule, EFailType } from 'clipboard-plugin'
-// import { EFailType, IClipboardModule } from "@/types/clipboard";
 
 export enum EFailType {
   size,
@@ -17,8 +14,8 @@ export enum EFailType {
 export interface IClipboardModule {
   mimetypes: string[];
   size: number;
-  sanitize: any;
   errorCallBack(arg: EFailType): IVDoc;
+  formatHtml(arg: string): string | void;
 }
 
 class ClipboardPlugin {
@@ -34,7 +31,10 @@ class ClipboardPlugin {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range === null) return;
-    let html = cleanHtml.bind(this)(e.clipboardData?.getData('text/html') || '');
+    let html =
+      this.options.formatHtml(e.clipboardData?.getData('text/html') || '') ||
+      e.clipboardData?.getData('text/html') ||
+      '';
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);
@@ -43,18 +43,17 @@ class ClipboardPlugin {
       if ($('img').length) {
         $('img').each((_i, el) => {
           let src = $(el).attr('src');
-          if (isUrl(src || '')) return
-          console.log(src, 'hahah')
+          if (isUrl(src || '')) return;
           switch (true) {
             case !src:
               $(el).remove();
               break;
             case this.calSize(src as string) > this.options.size:
-              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)))
+              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)));
               $(el).replaceWith(SizeVNode.outerHTML);
               break;
             case !this.calType(src as string):
-              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)))
+              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)));
               $(el).replaceWith(TypeVNode.outerHTML);
             default:
               break;
@@ -67,13 +66,6 @@ class ClipboardPlugin {
       this.fileFormat(range, files);
       return;
     }
-    // if (html && files.length > 0) {
-    //   const doc = new DOMParser().parseFromString(html, 'text/html');
-    //   if (doc.body.childElementCount === 1 && doc.body.firstElementChild?.tagName === 'IMG') {
-    //     this.fileFormat(range, files);
-    //     return;
-    //   }
-    // }
     this.pasteContent({ text, html }, range);
   }
 
@@ -111,10 +103,10 @@ class ClipboardPlugin {
         let VNode;
         switch (true) {
           case file.size > this.options.size:
-              VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)))
+            VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)));
             break;
           case !this.options.mimetypes.includes(file.type):
-              VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)))
+            VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)));
             break;
           default:
             uploads.push(file);
@@ -126,8 +118,7 @@ class ClipboardPlugin {
     if (uploads.length > 0) {
       const base64List = await getImgInfo(uploads);
       let img = new Image() as HTMLImageElement | null;
-      (img as HTMLImageElement).onerror = () => {
-      };
+      (img as HTMLImageElement).onerror = () => {};
 
       (img as HTMLImageElement).src = base64List[0] as string;
 
@@ -139,25 +130,6 @@ class ClipboardPlugin {
       this.quill.setSelection(range.index + base64List.length, 0, Quill.sources.SILENT);
     }
   }
-}
-
-// if (window) {
-//   (window as any).QuillImageDropAndPaste = ClipboardPlugin;
-//   if ('Quill' in window) {
-//     (window as any).Quill.register('modules/ClipboardPlugin', ClipboardPlugin, true);
-//   }
-// }
-
-function cleanHtml<T>(this: T extends ClipboardPlugin ? T : Record<string, any>, html: string): string {
-  if (!html) return '';
-  return sanitizeHTML(html, {
-    allowedTags: sanitizeHTML.defaults.allowedTags.concat(defaultAllowedTags),
-    allowedAttributes: {
-      a: ['href', 'name', 'target', 'id', 'class', 'style'],
-      img: ['src', 'id', 'class', 'style'],
-    },
-    allowedSchemes: ['data', 'http', 'https'],
-  });
 }
 
 function getImgInfo(files: File[]) {

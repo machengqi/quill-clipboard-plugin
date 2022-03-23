@@ -79,11 +79,11 @@ interface ClipboardPluginOption {
     // file max size, default 10MB
     size: number;
 
-    // TODO fix
-    sanitize: any;
-
     // error file call back, need return a VDoc
     errorCallBack(arg: EFailType): IVDoc,
+
+    // this callback can format clipboard's html
+    formatHtml(arg: string): string | void,
 }
 
 /**
