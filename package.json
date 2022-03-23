@@ -1,6 +1,6 @@
 {
 		"name": "quill-clipboard-plugin",
-		"version": "1.2.4",
+		"version": "1.2.5",
 		"description": "A new clipboard module better then quill clipboard",
 		"main": "dist/quill.clipboard.min.js",
 		"types": "types/index.d.ts",
