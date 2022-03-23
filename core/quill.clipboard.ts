@@ -32,9 +32,8 @@ class ClipboardPlugin {
     const range = this.quill.getSelection(true);
     if (range === null) return;
     let html =
-      this.options.formatHtml(e.clipboardData?.getData('text/html') || '') ||
-      e.clipboardData?.getData('text/html') ||
-      '';
+      this.options.formatHtml(e.clipboardData?.getData('text/html') || '') ??
+      (e.clipboardData?.getData('text/html') || '');
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);

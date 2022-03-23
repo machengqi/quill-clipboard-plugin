@@ -27,6 +27,9 @@ const quill = new Quill('#editor', {
           }
         };
       },
+      formatHtml() {
+        return '';
+      }
     },
   },
 });
