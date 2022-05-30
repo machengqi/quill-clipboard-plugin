@@ -97,6 +97,9 @@ interface ClipboardPluginOption {
  */
 interface ILimitSizeMap {
   size: number;
+  /**
+   * you can do like this [ 'image/png', 'image/gif' ]
+   */
   mimetypes?: string[];
 }
 
