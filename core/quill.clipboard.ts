@@ -11,10 +11,15 @@ export enum EFailType {
   type,
   other,
 }
+
+export interface ILimitSizeMap {
+  size: number;
+  mimetypes?: string[];
+}
 export interface IClipboardModule {
   mimetypes: string[];
-  size: number;
-  errorCallBack(arg: EFailType): IVDoc;
+  limitSize: ILimitSizeMap[];
+  errorCallBack(errorType: EFailType, HtmlElement: string | File): IVDoc;
   beforePaste(arg: string): string | void;
 }
 
@@ -42,18 +47,20 @@ class ClipboardPlugin {
       if ($('img').length) {
         $('img').each((_i, el) => {
           let src = $(el).attr('src');
+          
           if (isUrl(src || '')) return;
+
           switch (true) {
             case !src:
               $(el).remove();
               break;
-            case this.calSize(src as string) > this.options.size:
-              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)));
+            case !this.calType(src || ''):
+              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, src || '')));
+              $(el).replaceWith(TypeVNode.outerHTML);
+            case !this.calSize(src || ''):
+              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, src || '')));
               $(el).replaceWith(SizeVNode.outerHTML);
               break;
-            case !this.calType(src as string):
-              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)));
-              $(el).replaceWith(TypeVNode.outerHTML);
             default:
               break;
           }
@@ -61,6 +68,7 @@ class ClipboardPlugin {
       }
     }
     html = $.html();
+    // html = '<html><head><meta charset="utf-8"></head><body><br class="Apple-interchange-newline"><iframe class="ql-video" frameborder="0" allowfullscreen="true" src="http://www.baidu.com" style="box-sizing: border-box; cursor: text; display: block; max-width: 100%; color: rgb(34, 34, 34); font-size: 13px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: pre-wrap; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><div>333</div></iframe><br class="Apple-interchange-newline"></body></html>'
     if (!$('body').html() && files.length > 0) {
       this.fileFormat(range, files);
       return;
@@ -73,17 +81,27 @@ class ClipboardPlugin {
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
     const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
 
+    console.log(formats, '😈');
+
     new Delta().insert('Text', { StyleSheet: {} });
 
     this.quill.updateContents(delta, Quill.sources.USER);
     this.quill.setSelection(delta.length() - range.length, 0, Quill.sources.SILENT);
   }
 
-  calSize(dataurl: string) {
-    if (!dataurl) return 0;
-    if (!isDataurl(dataurl)) return 0;
-    const file = dataURLtoFile(dataurl, 'file');
-    return file.size;
+  calSize(dataurl: string | File) {
+    if (!dataurl) return false;
+    if (Object.prototype.toString.call(dataurl)) {
+      if (!isDataurl(dataurl as string)) return false;
+      dataurl = dataURLtoFile(dataurl as string, 'file');
+    }
+    return this.options.limitSize.some((limitSizeItem) => {
+      if (limitSizeItem.mimetypes && limitSizeItem.mimetypes.length) {
+        return limitSizeItem.mimetypes.includes((dataurl as File).type);
+      } else {
+        return (dataurl as File).size > limitSizeItem.size;
+      }
+    });
   }
 
   calType(dataurl: string) {
@@ -98,21 +116,45 @@ class ClipboardPlugin {
   async fileFormat(range: RangeStatic, files: File[]) {
     const uploads: File[] = [];
     Array.from(files).forEach((file) => {
-      if (file) {
-        let VNode;
-        switch (true) {
-          case file.size > this.options.size:
-            VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size)));
-            break;
-          case !this.options.mimetypes.includes(file.type):
-            VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type)));
-            break;
-          default:
-            uploads.push(file);
-            break;
-        }
-        VNode && this.pasteContent({ text: VNode.textContent || '', html: VNode.outerHTML }, range);
+      // if (file) {
+      let VNode;
+
+      /**
+       * check img type
+       */
+      if (!this.options.mimetypes.includes(file.type)) {
+        VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, file)));
       }
+
+      /**
+       * check img size
+       */
+      if (this.options.limitSize.length) {
+        const isSetUpSize = this.options.limitSize.some((limitSizeItem) => {
+          if (limitSizeItem.mimetypes && limitSizeItem.mimetypes.length) {
+            return limitSizeItem.mimetypes.includes(file.type);
+          } else {
+            return file.size > limitSizeItem.size;
+          }
+        });
+        if (isSetUpSize) {
+          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, file)));
+        }
+      }
+
+      switch (true) {
+        case this.calSize(file):
+          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, file)));
+          break;
+        case !this.options.mimetypes.includes(file.type):
+          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, file)));
+          break;
+        default:
+          uploads.push(file);
+          break;
+      }
+      VNode && this.pasteContent({ text: VNode.textContent || '', html: VNode.outerHTML }, range);
+      // }
     });
     if (uploads.length > 0) {
       const base64List = await getImgInfo(uploads);

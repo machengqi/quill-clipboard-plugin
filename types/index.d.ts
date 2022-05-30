@@ -7,11 +7,16 @@ declare module 'quill-clipboard-plugin' {
     other,
   }
 
+  export interface ILimitSizeMap {
+    size: number;
+    mimetypes?: string[];
+  }
+
   export interface IClipboardModule {
     mimetypes: string[];
-    size: number;
-    sanitize: any;
-    errorCallBack(arg: EFailType): IVDoc;
+    limitSize: ILimitSizeMap[];
+    errorCallBack(errorType: EFailType, HtmlElement: string | File): IVDoc;
+    beforePaste(arg: string): string | void;
   }
 
   export interface IVDoc {

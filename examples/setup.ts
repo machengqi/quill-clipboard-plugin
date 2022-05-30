@@ -1,9 +1,9 @@
 import Quill from 'quill';
 
-import BetterClipboard from "@/core/quill.clipboard";
+import ClipboardPlugin from "@/core/quill.clipboard";
 
 
 
-Quill.register('modules/betterClipboard', BetterClipboard, true);
+Quill.register('modules/clipboardPlugin', ClipboardPlugin, true);
 
 export default Quill;

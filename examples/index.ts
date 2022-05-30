@@ -1,8 +1,7 @@
 import Quill from '@/examples/setup';
+import { IVDoc } from 'quill-clipboard-plugin';
 // import Module from "quill/core/module";
 // import imageCompressor from ".";
-
-// Quill.register("modules/BetterClipboard", BetterClipboard);
 
 console.log(Quill);
 
@@ -14,22 +13,28 @@ const quill = new Quill('#editor', {
     toolbar: {
       container: fullToolbarOptions,
     },
-    betterClipboard: {
-      size: 1024 * 1024 * 2,
-      errorCallBack() {
+    clipboardPlugin: {
+      size: 1024 * 2,
+      errorCallBack(type: any, errorItem: any): IVDoc {
+        console.log(type);
+        console.log(errorItem);
         return {
-          targetName: 'div',
-          text: '图片尺寸过大',
-          style: {
-            height: '100px',
-            color: 'red',
-            background: '#000',
-          }
+          targetName: 'img',
+          // text: '图片尺寸过大',
+          attr: {
+            src: 'https://media.nationalgeographic.org/assets/photos/000/290/29094.jpg',
+            'data-type': '3333',
+          },
+          // style: {
+          //   height: '100px',
+          //   color: 'red',
+          //   background: '#000',
+          // },
         };
       },
       formatHtml() {
         return '';
-      }
+      },
     },
   },
 });

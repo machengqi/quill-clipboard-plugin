@@ -1,6 +1,6 @@
 # quill-clipboard-plugin
-> A quill editor module plugin for clipboard pasted files, it can help you filter clipboard file size and mimetypes, and provides a hook to help you substituted error files.
 
+> A quill editor module plugin for clipboard pasted files, it can help you filter clipboard file size and mimetypes, and provides a hook to help you substituted error files.
 
 ## Install
 
@@ -11,28 +11,30 @@ yarn add quill-clipboard-plugin -S
 ```
 
 ## Usage
+
 ### Import
 
-``` javascript
+```javascript
 import Quill from 'quill';
 
-import ClipboardPlugin from 'quill-clipboard-plugin'
+import ClipboardPlugin from 'quill-clipboard-plugin';
 
 Quill.register({
-  "modules/clipboardPlugin": ClipboardPlugin
-})
+  'modules/clipboardPlugin': ClipboardPlugin,
+});
 
 const quill = new Quill('#your-editor-container', {
   // ...
   modules: {
     // ...
-    clipboardPlugin: {}
-  }
+    clipboardPlugin: {},
+  },
 });
 ```
 
 ### Option
-``` typescript
+
+```typescript
 
 const modules = {
   clipboardPlugin: {
@@ -41,7 +43,11 @@ const modules = {
     mimetypes: ['image/png', 'image/jpeg'],
 
     // file max size, default 10MB
-    size: 1024 * 1024 * 10,
+    limitSize: [
+      {
+        size: 1024 * 1024 * 10,
+      },
+    ],
 
     // error file call back, need return a VDoc
     errorCallBack: errorCallBack
@@ -53,7 +59,7 @@ const modules = {
  * need return type of IVDoc or void
  */
 function errorCallBack (type): IVDoc {
-  // 
+  //
   return {
     targetName: 'div';
     attr: {
@@ -72,12 +78,12 @@ function errorCallBack (type): IVDoc {
 }
 
 interface ClipboardPluginOption {
-  
+
     // file mimetypes (img | xml ... and more)
     mimetypes: string[];
 
     // file max size, default 10MB
-    size: number;
+    limitSize: ILimitSizeMap[];
 
     // error file call back, need return a VDoc
     errorCallBack(arg: EFailType): IVDoc,
@@ -87,7 +93,15 @@ interface ClipboardPluginOption {
 }
 
 /**
- * 
+ * limitSize option
+ */
+interface ILimitSizeMap {
+  size: number;
+  mimetypes?: string[];
+}
+
+/**
+ *
  */
 interface IVDoc {
   // document target name: 'div', 'p', 'img'...

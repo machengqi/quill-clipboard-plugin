@@ -83,7 +83,11 @@ export const defaultDisallowedTags: string[] = [];
 
 export const clipboardDefaultOpts: IClipboardModule = {
   mimetypes: ['image/png', 'image/jpeg'],
-  size: 1024 * 1024 * 10,
+  limitSize: [
+    {
+      size: 1024 * 1024 * 10,
+    },
+  ],
   errorCallBack(e) {
     console.log(e);
     return {};
