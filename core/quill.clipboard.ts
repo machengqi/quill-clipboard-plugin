@@ -1,8 +1,7 @@
 import Quill, { RangeStatic } from 'quill';
-import cheerio from 'cheerio';
 import { clipboardDefaultOpts } from '@/constants';
 import Delta from 'quill-delta';
-import { isDataurl, isUrl } from '@/utils/regexps';
+import { isDataurl } from '@/utils/regexps';
 import { IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
 
@@ -74,55 +73,53 @@ class ClipboardPlugin {
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);
-    const $ = cheerio.load(html || '');
+
+    const _doc = new DOMParser().parseFromString(html || '', 'text/html');
 
     const promiseList: Promise<IVDoc>[] = [];
 
     if (html) {
-      if ($('img').length) {
-        $('img').each((_i, el) => {
-          let src = $(el).attr('src');
-
-          if (isUrl(src || '')) return;
-          if (this.options.urlReg && this.options.urlReg.test(src || '')) {
-            promiseList.push();
-          }
+      const imgDoc = _doc.querySelectorAll('img');
+      if (imgDoc.length) {
+        Array.from(imgDoc).forEach((el) => {
+          let _src = el.getAttribute('src');
 
           const _rpw = (type: EFailType) => {
+            console.log(EFailType[type]);
             promiseList.push(
               new Promise(async (res) => {
-                const VNode = await this.options.errorCallBack(type, src || '');
+                const VNode = await this.options.errorCallBack(type, _src || '');
                 this.quill.root
-                  .querySelector(`template-blot[data-serialization="${src}"]`)
+                  .querySelector(`template-blot[data-serialization="${_src}"]`)
                   ?.replaceWith(createDocument(new VDoc(VNode)));
                 res(VNode);
               }),
             );
-            $(el).replaceWith(
+            el.replaceWith(
               createDocument(
                 new VDoc(
                   this.options.slot ?? {
                     targetName: 'template-blot',
                     attr: {
-                      'data-serialization': src,
+                      'data-serialization': _src,
                       'data-value': '',
                     },
                     text: '',
                   },
                 ),
-              ).outerHTML,
+              ),
             );
           };
 
           switch (true) {
-            case !src:
-              $(el).remove();
+            case !_src:
+              el.remove();
               break;
-            case !(this.options.urlReg?.test(src || '') ?? true):
+            case !(this.options.urlReg?.test(_src || '') ?? true):
               _rpw(EFailType.reg);
-            case !this.calType(src || ''):
+            case !this.calType(_src || ''):
               _rpw(EFailType.type);
-            case !this.calSize(src || ''):
+            case !this.calSize(_src || ''):
               _rpw(EFailType.size);
               break;
             default:
@@ -134,10 +131,10 @@ class ClipboardPlugin {
 
     Promise.all(promiseList);
 
-    html = $.html();
+    html = _doc.documentElement.innerHTML;
 
     // html = '<html><head><meta charset="utf-8"></head><body><br class="Apple-interchange-newline"><iframe class="ql-video" frameborder="0" allowfullscreen="true" src="http://www.baidu.com" style="box-sizing: border-box; cursor: text; display: block; max-width: 100%; color: rgb(34, 34, 34); font-size: 13px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: pre-wrap; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><div>333</div></iframe><br class="Apple-interchange-newline"></body></html>'
-    if (!$('body').html() && files.length > 0) {
+    if (!_doc.querySelector('body')?.innerHTML && files.length > 0) {
       this.fileFormat(range, files);
       return;
     }
@@ -148,8 +145,6 @@ class ClipboardPlugin {
     const formats = this.quill.getFormat(range.index);
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
     const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
-
-    console.log(delta);
 
     new Delta().insert('Text', { StyleSheet: {} });
 

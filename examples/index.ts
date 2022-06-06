@@ -19,7 +19,7 @@ const quill = new Quill('#editor', {
         console.log(type);
         console.log(errorItem);
 
-        await new Promise((res, rej) => {
+        await new Promise(res => {
           setTimeout(() => {
             res(null);
           }, 3000);
