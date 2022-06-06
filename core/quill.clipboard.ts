@@ -38,6 +38,7 @@ Quill.register(TemplateBlot);
 export enum EFailType {
   size,
   type,
+  reg,
   other,
 }
 
@@ -48,6 +49,7 @@ export interface ILimitSizeMap {
 export interface IClipboardModule {
   mimetypes: string[];
   limitSize: ILimitSizeMap[];
+  urlReg?: RegExp;
   errorCallBack(errorType: EFailType, HtmlElement: string | File): Promise<IVDoc>;
   slot?: IVDoc;
   beforePaste(arg: string): string | void;
@@ -82,59 +84,46 @@ class ClipboardPlugin {
           let src = $(el).attr('src');
 
           if (isUrl(src || '')) return;
+          if (this.options.urlReg && this.options.urlReg.test(src || '')) {
+            promiseList.push();
+          }
+
+          const _rpw = (type: EFailType) => {
+            promiseList.push(
+              new Promise(async (res) => {
+                const VNode = await this.options.errorCallBack(type, src || '');
+                this.quill.root
+                  .querySelector(`template-blot[data-serialization="${src}"]`)
+                  ?.replaceWith(createDocument(new VDoc(VNode)));
+                res(VNode);
+              }),
+            );
+            $(el).replaceWith(
+              createDocument(
+                new VDoc(
+                  this.options.slot ?? {
+                    targetName: 'template-blot',
+                    attr: {
+                      'data-serialization': src,
+                      'data-value': '',
+                    },
+                    text: '',
+                  },
+                ),
+              ).outerHTML,
+            );
+          };
 
           switch (true) {
             case !src:
               $(el).remove();
               break;
+            case !(this.options.urlReg?.test(src || '') ?? true):
+              _rpw(EFailType.reg);
             case !this.calType(src || ''):
-              promiseList.push(
-                new Promise(async (res) => {
-                  const VNode = await this.options.errorCallBack(EFailType.type, src || '');
-                  this.quill.root
-                    .querySelector(`template-blot[data-serialization="${src}"]`)
-                    ?.replaceWith(createDocument(new VDoc(VNode)));
-                  res(VNode);
-                }),
-              );
-              $(el).replaceWith(
-                createDocument(
-                  new VDoc(
-                    this.options.slot ?? {
-                      targetName: 'template-blot',
-                      attr: {
-                        'data-serialization': src,
-                        'data-value': '',
-                      },
-                      text: '',
-                    },
-                  ),
-                ).outerHTML,
-              );
+              _rpw(EFailType.type);
             case !this.calSize(src || ''):
-              promiseList.push(
-                new Promise(async (res) => {
-                  const VNode = await this.options.errorCallBack(EFailType.size, src || '');
-                  this.quill.root
-                    .querySelector(`template-blot[data-serialization="${src}"]`)
-                    ?.replaceWith(createDocument(new VDoc(VNode)));
-                  res(VNode);
-                }),
-              );
-              $(el).replaceWith(
-                createDocument(
-                  new VDoc(
-                    this.options.slot ?? {
-                      targetName: 'template-blot',
-                      attr: {
-                        'data-serialization': src,
-                        'data-value': '',
-                      },
-                      text: '',
-                    },
-                  ),
-                ).outerHTML,
-              );
+              _rpw(EFailType.size);
               break;
             default:
               break;
@@ -143,7 +132,7 @@ class ClipboardPlugin {
       }
     }
 
-    Promise.all(promiseList)
+    Promise.all(promiseList);
 
     html = $.html();
 
@@ -170,7 +159,7 @@ class ClipboardPlugin {
 
   calSize(dataurl: string | File) {
     if (!dataurl) return false;
-    if (Object.prototype.toString.call(dataurl)) {
+    if (Object.prototype.toString.call(dataurl) === 'string') {
       if (!isDataurl(dataurl as string)) return false;
       dataurl = dataURLtoFile(dataurl as string, 'file');
     }

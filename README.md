@@ -85,11 +85,17 @@ interface ClipboardPluginOption {
     // file max size, default 10MB
     limitSize: ILimitSizeMap[];
 
+    // a reg rule of to check you img url
+    urlReg?: RegExp;
+
+    // TODO is testing, plz dont use it :)
+    slot?: IVDoc;
+
     // error file call back, need return a VDoc
-    errorCallBack(arg: EFailType): IVDoc,
+    errorCallBack(arg: EFailType): IVDoc;
 
     // this callback before then paste; arg is clipboard html, return val can format clipboard data
-    beforePaste(arg: string): string | void,
+    beforePaste(arg: string): string | void;
 }
 
 /**
