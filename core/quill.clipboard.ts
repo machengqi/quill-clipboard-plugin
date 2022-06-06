@@ -1,7 +1,7 @@
 import Quill, { RangeStatic } from 'quill';
 import { clipboardDefaultOpts } from '@/constants';
 import Delta from 'quill-delta';
-import { isDataurl } from '@/utils/regexps';
+import { isDataurl, isUrl } from '@/utils/regexps';
 import { IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
 
@@ -13,7 +13,7 @@ const ATTRS = {
 const Embed = Quill.import('blots/embed');
 
 class TemplateBlot extends Embed {
-  static create(value: { serialization: string; value: string; }) {
+  static create(value: { serialization: string; value: string }) {
     const node = super.create(value);
     node.setAttribute(ATTRS.SERIALIZATION, value.serialization);
     node.setAttribute(ATTRS.VALUE, value.value);
@@ -21,7 +21,7 @@ class TemplateBlot extends Embed {
     return node;
   }
 
-  static value(node: { getAttribute: (arg0: string) => string; }) {
+  static value(node: { getAttribute: (arg0: string) => string }) {
     return {
       value: '',
       serialization: node.getAttribute(ATTRS.SERIALIZATION),
@@ -85,6 +85,7 @@ class ClipboardPlugin {
           let _src = el.getAttribute('src');
 
           const _rpw = (type: EFailType) => {
+            console.log(EFailType[type], 'ttttt');
             promiseList.push(
               new Promise(async (res) => {
                 const VNode = await this.options.errorCallBack(type, _src || '');
@@ -116,8 +117,11 @@ class ClipboardPlugin {
               break;
             case !(this.options.urlReg?.test(_src || '') ?? true):
               _rpw(EFailType.reg);
+            case isUrl(_src || ''):
+              break;
             case !this.calType(_src || ''):
               _rpw(EFailType.type);
+              break
             case !this.calSize(_src || ''):
               _rpw(EFailType.size);
               break;
