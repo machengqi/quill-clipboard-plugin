@@ -13,7 +13,7 @@ const ATTRS = {
 const Embed = Quill.import('blots/embed');
 
 class TemplateBlot extends Embed {
-  static create(value: any) {
+  static create(value: { serialization: string; value: string; }) {
     const node = super.create(value);
     node.setAttribute(ATTRS.SERIALIZATION, value.serialization);
     node.setAttribute(ATTRS.VALUE, value.value);
@@ -21,7 +21,7 @@ class TemplateBlot extends Embed {
     return node;
   }
 
-  static value(node: any) {
+  static value(node: { getAttribute: (arg0: string) => string; }) {
     return {
       value: '',
       serialization: node.getAttribute(ATTRS.SERIALIZATION),
@@ -85,7 +85,6 @@ class ClipboardPlugin {
           let _src = el.getAttribute('src');
 
           const _rpw = (type: EFailType) => {
-            console.log(EFailType[type]);
             promiseList.push(
               new Promise(async (res) => {
                 const VNode = await this.options.errorCallBack(type, _src || '');
