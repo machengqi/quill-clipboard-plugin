@@ -6,6 +6,35 @@ import { isDataurl, isUrl } from '@/utils/regexps';
 import { IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
 
+const ATTRS = {
+  SERIALIZATION: 'data-serialization',
+  VALUE: 'data-value',
+};
+
+const Embed = Quill.import('blots/embed');
+
+class TemplateBlot extends Embed {
+  static create(value: any) {
+    const node = super.create(value);
+    node.setAttribute(ATTRS.SERIALIZATION, value.serialization);
+    node.setAttribute(ATTRS.VALUE, value.value);
+    node.textContent = value.value;
+    return node;
+  }
+
+  static value(node: any) {
+    return {
+      value: '',
+      serialization: node.getAttribute(ATTRS.SERIALIZATION),
+    };
+  }
+}
+
+TemplateBlot.blotName = 'template';
+TemplateBlot.tagName = 'template-blot';
+
+Quill.register(TemplateBlot);
+
 export enum EFailType {
   size,
   type,
@@ -19,7 +48,8 @@ export interface ILimitSizeMap {
 export interface IClipboardModule {
   mimetypes: string[];
   limitSize: ILimitSizeMap[];
-  errorCallBack(errorType: EFailType, HtmlElement: string | File): IVDoc;
+  errorCallBack(errorType: EFailType, HtmlElement: string | File): Promise<IVDoc>;
+  slot?: IVDoc;
   beforePaste(arg: string): string | void;
 }
 
@@ -32,22 +62,25 @@ class ClipboardPlugin {
     this.quill.root.addEventListener('paste', this.onPaste.bind(this), true);
   }
 
-  onPaste(e: ClipboardEvent) {
+  async onPaste(e: ClipboardEvent) {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range === null) return;
     let html =
-      this.options.beforePaste(e.clipboardData?.getData('text/html') || '') ??
+      (await this.options.beforePaste(e.clipboardData?.getData('text/html') || '')) ??
       (e.clipboardData?.getData('text/html') || '');
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);
     const $ = cheerio.load(html || '');
+
+    const promiseList: Promise<IVDoc>[] = [];
+
     if (html) {
       if ($('img').length) {
         $('img').each((_i, el) => {
           let src = $(el).attr('src');
-          
+
           if (isUrl(src || '')) return;
 
           switch (true) {
@@ -55,11 +88,53 @@ class ClipboardPlugin {
               $(el).remove();
               break;
             case !this.calType(src || ''):
-              const TypeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, src || '')));
-              $(el).replaceWith(TypeVNode.outerHTML);
+              promiseList.push(
+                new Promise(async (res) => {
+                  const VNode = await this.options.errorCallBack(EFailType.type, src || '');
+                  this.quill.root
+                    .querySelector(`template-blot[data-serialization="${src}"]`)
+                    ?.replaceWith(createDocument(new VDoc(VNode)));
+                  res(VNode);
+                }),
+              );
+              $(el).replaceWith(
+                createDocument(
+                  new VDoc(
+                    this.options.slot ?? {
+                      targetName: 'template-blot',
+                      attr: {
+                        'data-serialization': src,
+                        'data-value': '',
+                      },
+                      text: '',
+                    },
+                  ),
+                ).outerHTML,
+              );
             case !this.calSize(src || ''):
-              const SizeVNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, src || '')));
-              $(el).replaceWith(SizeVNode.outerHTML);
+              promiseList.push(
+                new Promise(async (res) => {
+                  const VNode = await this.options.errorCallBack(EFailType.size, src || '');
+                  this.quill.root
+                    .querySelector(`template-blot[data-serialization="${src}"]`)
+                    ?.replaceWith(createDocument(new VDoc(VNode)));
+                  res(VNode);
+                }),
+              );
+              $(el).replaceWith(
+                createDocument(
+                  new VDoc(
+                    this.options.slot ?? {
+                      targetName: 'template-blot',
+                      attr: {
+                        'data-serialization': src,
+                        'data-value': '',
+                      },
+                      text: '',
+                    },
+                  ),
+                ).outerHTML,
+              );
               break;
             default:
               break;
@@ -67,7 +142,11 @@ class ClipboardPlugin {
         });
       }
     }
+
+    Promise.all(promiseList)
+
     html = $.html();
+
     // html = '<html><head><meta charset="utf-8"></head><body><br class="Apple-interchange-newline"><iframe class="ql-video" frameborder="0" allowfullscreen="true" src="http://www.baidu.com" style="box-sizing: border-box; cursor: text; display: block; max-width: 100%; color: rgb(34, 34, 34); font-size: 13px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: pre-wrap; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><div>333</div></iframe><br class="Apple-interchange-newline"></body></html>'
     if (!$('body').html() && files.length > 0) {
       this.fileFormat(range, files);
@@ -81,7 +160,7 @@ class ClipboardPlugin {
     const pastedDelta = this.quill.clipboard.convert({ text, html }, formats);
     const delta = new Delta().retain(range.index).delete(range.length).concat(pastedDelta);
 
-    console.log(formats, '😈');
+    console.log(delta);
 
     new Delta().insert('Text', { StyleSheet: {} });
 
@@ -115,7 +194,7 @@ class ClipboardPlugin {
 
   async fileFormat(range: RangeStatic, files: File[]) {
     const uploads: File[] = [];
-    Array.from(files).forEach((file) => {
+    Array.from(files).forEach(async (file) => {
       // if (file) {
       let VNode;
 
@@ -123,7 +202,7 @@ class ClipboardPlugin {
        * check img type
        */
       if (!this.options.mimetypes.includes(file.type)) {
-        VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, file)));
+        VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.type, file)));
       }
 
       /**
@@ -138,16 +217,16 @@ class ClipboardPlugin {
           }
         });
         if (isSetUpSize) {
-          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.size, file)));
         }
       }
 
       switch (true) {
         case this.calSize(file):
-          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.size, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.size, file)));
           break;
         case !this.options.mimetypes.includes(file.type):
-          VNode = createDocument(new VDoc(this.options.errorCallBack(EFailType.type, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.type, file)));
           break;
         default:
           uploads.push(file);

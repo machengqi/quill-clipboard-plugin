@@ -5,7 +5,7 @@ import { IVDoc } from 'quill-clipboard-plugin';
 
 console.log(Quill);
 
-const fullToolbarOptions = [[{ header: [1, 2, 3, false] }], ['bold', 'italic'], ['clean'], ['image']];
+const fullToolbarOptions = [[{ header: [1, 2, 3, false] }], ['bold', 'italic'], ['clean'], ['image'], ['SubtitleBlot']];
 
 const quill = new Quill('#editor', {
   theme: 'snow',
@@ -15,9 +15,16 @@ const quill = new Quill('#editor', {
     },
     clipboardPlugin: {
       size: 1024 * 2,
-      errorCallBack(type: any, errorItem: any): IVDoc {
+      async errorCallBack(type: any, errorItem: any): Promise<IVDoc> {
         console.log(type);
         console.log(errorItem);
+
+        await new Promise((res, rej) => {
+          setTimeout(() => {
+            res(null);
+          }, 3000);
+        });
+
         return {
           targetName: 'img',
           // text: '图片尺寸过大',
@@ -25,11 +32,11 @@ const quill = new Quill('#editor', {
             src: 'https://media.nationalgeographic.org/assets/photos/000/290/29094.jpg',
             'data-type': '3333',
           },
-          // style: {
-          //   height: '100px',
-          //   color: 'red',
-          //   background: '#000',
-          // },
+          style: {
+            height: '100px',
+            color: 'red',
+            background: '#000',
+          },
         };
       },
       formatHtml() {
