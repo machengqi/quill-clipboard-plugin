@@ -2,7 +2,7 @@ import Quill, { RangeStatic } from 'quill';
 import { clipboardDefaultOpts } from '@/constants';
 import Delta from 'quill-delta';
 import { isDataurl, isUrl } from '@/utils/regexps';
-import { IVDoc } from 'quill-clipboard-plugin';
+import { IClipboardModule, IFailType, IVDoc } from 'quill-clipboard-plugin';
 import { createDocument, VDoc } from './clipboard.document';
 
 const ATTRS = {
@@ -34,26 +34,6 @@ TemplateBlot.tagName = 'template-blot';
 
 Quill.register(TemplateBlot);
 
-export enum EFailType {
-  size,
-  type,
-  reg,
-  other,
-}
-
-export interface ILimitSizeMap {
-  size: number;
-  mimetypes?: string[];
-}
-export interface IClipboardModule {
-  mimetypes: string[];
-  limitSize: ILimitSizeMap[];
-  urlReg?: RegExp;
-  errorCallBack(errorType: EFailType, HtmlElement: string | File): Promise<IVDoc>;
-  slot?: IVDoc;
-  beforePaste(arg: string): string | void;
-}
-
 class ClipboardPlugin {
   public quill!: Quill;
   public options!: IClipboardModule;
@@ -84,8 +64,7 @@ class ClipboardPlugin {
         Array.from(imgDoc).forEach((el) => {
           let _src = el.getAttribute('src');
 
-          const _rpw = (type: EFailType) => {
-            console.log(EFailType[type], 'ttttt');
+          const _rpw = (type: IFailType) => {
             promiseList.push(
               new Promise(async (res) => {
                 const VNode = await this.options.errorCallBack(type, _src || '');
@@ -116,14 +95,14 @@ class ClipboardPlugin {
               el.remove();
               break;
             case !(this.options.urlReg?.test(_src || '') ?? true):
-              _rpw(EFailType.reg);
+              _rpw('reg');
             case isUrl(_src || ''):
               break;
             case !this.calType(_src || ''):
-              _rpw(EFailType.type);
-              break
+              _rpw('type');
+              break;
             case !this.calSize(_src || ''):
-              _rpw(EFailType.size);
+              _rpw('size');
               break;
             default:
               break;
@@ -189,7 +168,7 @@ class ClipboardPlugin {
        * check img type
        */
       if (!this.options.mimetypes.includes(file.type)) {
-        VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.type, file)));
+        VNode = createDocument(new VDoc(await this.options.errorCallBack('type', file)));
       }
 
       /**
@@ -204,16 +183,16 @@ class ClipboardPlugin {
           }
         });
         if (isSetUpSize) {
-          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.size, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack('size', file)));
         }
       }
 
       switch (true) {
         case this.calSize(file):
-          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.size, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack('size', file)));
           break;
         case !this.options.mimetypes.includes(file.type):
-          VNode = createDocument(new VDoc(await this.options.errorCallBack(EFailType.type, file)));
+          VNode = createDocument(new VDoc(await this.options.errorCallBack('type', file)));
           break;
         default:
           uploads.push(file);

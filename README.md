@@ -77,6 +77,8 @@ function errorCallBack (type): IVDoc {
   }
 }
 
+type IFailType = 'size' | 'type' | 'reg' | 'other';
+
 interface ClipboardPluginOption {
 
     // file mimetypes (img | xml ... and more)
@@ -92,7 +94,7 @@ interface ClipboardPluginOption {
     slot?: IVDoc;
 
     // error file call back, need return a VDoc
-    errorCallBack(arg: EFailType): IVDoc;
+    errorCallBack(arg: IFailType): IVDoc;
 
     // this callback before then paste; arg is clipboard html, return val can format clipboard data
     beforePaste(arg: string): string | void;

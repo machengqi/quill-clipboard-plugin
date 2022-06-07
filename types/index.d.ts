@@ -1,12 +1,7 @@
 declare module 'quill-clipboard-plugin' {
   export default class ClipboardPlugin {}
 
-  export enum EFailType {
-    size,
-    type,
-    reg,
-    other,
-  }
+  export type IFailType = 'size' | 'type' | 'reg' | 'other';
 
   export interface ILimitSizeMap {
     size: number;
@@ -17,7 +12,7 @@ declare module 'quill-clipboard-plugin' {
     mimetypes: string[];
     limitSize: ILimitSizeMap[];
     urlReg?: RegExp;
-    errorCallBack(errorType: EFailType, HtmlElement: string | File): Promise<IVDoc>;
+    errorCallBack(errorType: IFailType, HtmlElement: string | File): Promise<IVDoc>;
     slot?: IVDoc;
     beforePaste(arg: string): string | void;
   }
