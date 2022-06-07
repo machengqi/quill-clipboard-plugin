@@ -1,6 +1,8 @@
 // import { clipboardPlugin } from "@/types/clipboard";
 
-import { IClipboardModule } from '@/core/quill.clipboard';
+import { IClipboardModule } from "quill-clipboard-plugin";
+
+// import { IClipboardModule } from '@/core/quill.clipboard';
 
 // import { IClipboardModule } from "@/types/clipboard";
 // import { IClipboardModule } from "clipboard-plugin";
@@ -82,13 +84,10 @@ import { IClipboardModule } from '@/core/quill.clipboard';
 export const defaultDisallowedTags: string[] = [];
 
 export const clipboardDefaultOpts: IClipboardModule = {
-  mimetypes: ['image/png', 'image/jpeg'],
-  limitSize: [
-    {
-      size: 1024 * 1024 * 10,
-    },
-  ],
-  errorCallBack(e) {
+  checkFile() {
+    return true;
+  },
+  async errorCallBack(e) {
     console.log(e);
     return {};
   },

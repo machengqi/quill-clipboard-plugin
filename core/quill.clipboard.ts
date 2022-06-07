@@ -90,18 +90,17 @@ class ClipboardPlugin {
             );
           };
 
+          const _file = this.calFile(_src || '');
+
           switch (true) {
             case !_src:
               el.remove();
               break;
             case isUrl(_src || '') && !(this.options.urlReg?.test(_src || '') ?? true):
               _rpw('reg');
-              break
-            case !this.calType(_src || ''):
-              _rpw('type');
               break;
-            case !this.calSize(_src || ''):
-              _rpw('size');
+            case !(_file && this.options.checkFile(_file.size, _file.type)):
+              _rpw('notFile');
               break;
             default:
               break;
@@ -132,72 +131,30 @@ class ClipboardPlugin {
     this.quill.setSelection(delta.length() - range.length, 0, Quill.sources.SILENT);
   }
 
-  calSize(dataurl: string | File) {
+  calFile(dataurl: string | File) {
     if (!dataurl) return false;
     if (Object.prototype.toString.call(dataurl) === '[object String]') {
       if (!isDataurl(dataurl as string)) return false;
       dataurl = dataURLtoFile(dataurl as string, 'file');
     }
-    return this.options.limitSize.some((limitSizeItem) => {
-      if (limitSizeItem.mimetypes && limitSizeItem.mimetypes.length) {
-        return limitSizeItem.mimetypes.includes((dataurl as File).type);
-      } else {
-        return (dataurl as File).size > limitSizeItem.size;
-      }
-    });
-  }
-
-  calType(dataurl: string) {
-    if (!dataurl) return false;
-    if (!isDataurl(dataurl)) return false;
-    let strIndex = dataurl.indexOf(',') + 1;
-    if (!strIndex) return false;
-    let str = dataurl.slice(0, strIndex);
-    return this.options.mimetypes?.some((e: string) => str.includes(e));
+    return dataurl as File;
   }
 
   async fileFormat(range: RangeStatic, files: File[]) {
     const uploads: File[] = [];
     Array.from(files).forEach(async (file) => {
-      // if (file) {
       let VNode;
 
-      /**
-       * check img type
-       */
-      if (!this.options.mimetypes.includes(file.type)) {
-        VNode = createDocument(new VDoc(await this.options.errorCallBack('type', file)));
-      }
-
-      /**
-       * check img size
-       */
-      if (this.options.limitSize.length) {
-        const isSetUpSize = this.options.limitSize.some((limitSizeItem) => {
-          if (limitSizeItem.mimetypes && limitSizeItem.mimetypes.length) {
-            return limitSizeItem.mimetypes.includes(file.type);
-          } else {
-            return file.size > limitSizeItem.size;
-          }
-        });
-        if (isSetUpSize) {
-          VNode = createDocument(new VDoc(await this.options.errorCallBack('size', file)));
-        }
-      }
-
       switch (true) {
-        case this.calSize(file):
-          VNode = createDocument(new VDoc(await this.options.errorCallBack('size', file)));
-          break;
-        case !this.options.mimetypes.includes(file.type):
-          VNode = createDocument(new VDoc(await this.options.errorCallBack('type', file)));
+        case !(file && this.options.checkFile(file.size, file.type)):
+          VNode = createDocument(new VDoc(await this.options.errorCallBack('notFile', file)));
           break;
         default:
           uploads.push(file);
           break;
       }
+
       VNode && this.pasteContent({ text: VNode.textContent || '', html: VNode.outerHTML }, range);
-      // }
     });
     if (uploads.length > 0) {
       const base64List = await getImgInfo(uploads);
