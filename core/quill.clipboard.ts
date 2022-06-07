@@ -94,10 +94,9 @@ class ClipboardPlugin {
             case !_src:
               el.remove();
               break;
-            case !(this.options.urlReg?.test(_src || '') ?? true):
+            case isUrl(_src || '') && !(this.options.urlReg?.test(_src || '') ?? true):
               _rpw('reg');
-            case isUrl(_src || ''):
-              break;
+              break
             case !this.calType(_src || ''):
               _rpw('type');
               break;
@@ -115,7 +114,6 @@ class ClipboardPlugin {
 
     html = _doc.documentElement.innerHTML;
 
-    // html = '<html><head><meta charset="utf-8"></head><body><br class="Apple-interchange-newline"><iframe class="ql-video" frameborder="0" allowfullscreen="true" src="http://www.baidu.com" style="box-sizing: border-box; cursor: text; display: block; max-width: 100%; color: rgb(34, 34, 34); font-size: 13px; font-style: normal; font-variant-ligatures: normal; font-variant-caps: normal; font-weight: 400; letter-spacing: normal; orphans: 2; text-align: left; text-indent: 0px; text-transform: none; white-space: pre-wrap; widows: 2; word-spacing: 0px; -webkit-text-stroke-width: 0px; text-decoration-thickness: initial; text-decoration-style: initial; text-decoration-color: initial;"><div>333</div></iframe><br class="Apple-interchange-newline"></body></html>'
     if (!_doc.querySelector('body')?.innerHTML && files.length > 0) {
       this.fileFormat(range, files);
       return;
@@ -136,7 +134,7 @@ class ClipboardPlugin {
 
   calSize(dataurl: string | File) {
     if (!dataurl) return false;
-    if (Object.prototype.toString.call(dataurl) === 'string') {
+    if (Object.prototype.toString.call(dataurl) === '[object String]') {
       if (!isDataurl(dataurl as string)) return false;
       dataurl = dataURLtoFile(dataurl as string, 'file');
     }
