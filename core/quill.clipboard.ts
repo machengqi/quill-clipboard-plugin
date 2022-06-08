@@ -99,6 +99,8 @@ class ClipboardPlugin {
             case isUrl(_src || '') && !(this.options.urlReg?.test(_src || '') ?? true):
               _rpw('reg');
               break;
+            case isUrl(_src || ''):
+              break;
             case !(_file && this.options.checkFile(_file.size, _file.type)):
               _rpw('notFile');
               break;
