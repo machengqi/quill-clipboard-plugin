@@ -47,9 +47,20 @@ class ClipboardPlugin {
     e.preventDefault();
     const range = this.quill.getSelection(true);
     if (range === null) return;
-    let html =
-      (await this.options.beforePaste(e.clipboardData?.getData('text/html') || '')) ??
-      (e.clipboardData?.getData('text/html') || '');
+
+    console.log(e.clipboardData?.getData('text/plain'));
+
+    let _textHtml;
+
+    if (e.clipboardData?.getData('text/html')) {
+      _textHtml = e.clipboardData?.getData('text/html');
+    } else if (e.clipboardData?.getData('text/plain')) {
+      _textHtml = `<p>${e.clipboardData?.getData('text/plain')}</p>`;
+    } else {
+      _textHtml = '';
+    }
+
+    let html = (await this.options.beforePaste(_textHtml)) ?? _textHtml;
     const text = e.clipboardData?.getData('text/plain');
     e.clipboardData?.getData('');
     const files = Array.from(e.clipboardData?.files || []);

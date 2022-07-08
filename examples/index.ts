@@ -5,13 +5,20 @@ import { IVDoc } from 'quill-clipboard-plugin';
 
 console.log(Quill);
 
-const fullToolbarOptions = [[{ header: [1, 2, 3, false] }], ['bold', 'italic'], ['clean'], ['image'], ['SubtitleBlot']];
+const fullToolbarOptions = [[{ header: [1, 2, 3, false] }], ['bold', 'italic'], ['clean'], ['image'], ['video']];
 
 const quill = new Quill('#editor', {
   theme: 'snow',
   modules: {
     toolbar: {
       container: fullToolbarOptions,
+    },
+    uploader: {
+      handler(range: any, files: any) {
+        console.log(range);
+        console.log(files);
+        return files;
+      },
     },
     clipboardPlugin: {
       checkFile(size: number, type: string) {
